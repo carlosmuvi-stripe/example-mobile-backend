@@ -179,6 +179,9 @@ post '/create_setup_intent' do
   if request.content_type != nil and request.content_type.include? 'application/json' and params.empty?
       payload = Sinatra::IndifferentHash[JSON.parse(request.body.read)]
   end
+
+  supported_payment_methods = payload[:supported_payment_methods] ? payload[:supported_payment_methods].split(",") : nil
+
   begin
     setup_intent = Stripe::SetupIntent.create({
       payment_method: payload[:payment_method],
@@ -186,7 +189,7 @@ post '/create_setup_intent' do
       confirm: payload[:payment_method] != nil,
       customer: payload[:customer_id],
       use_stripe_sdk: payload[:payment_method] != nil ? true : nil,
-      payment_method_types: payment_methods_for_country(payload[:country]),
+      payment_method_types: supported_payment_methods ? supported_payment_methods : payment_methods_for_country(payload[:country]),
     })
   rescue Stripe::StripeError => e
     status 402
